@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  user
+  admin
+  auditor
+}
+
+enum OsType {
+  linux
+  macos
+  windows
+}
+
+enum DeviceStatus {
+  enrolled
+  online
+  offline
+}
+
+enum AccessMethod {
+  ssh
+  rdp
+  vnc
+}
+
+enum ReservationStatus {
+  pending
+  active
+  completed
+  canceled
+  no_show
+  expired
+}
+
+enum SessionProtocol {
+  ssh
+  rdp
+  vnc
+}
+
+enum AuditEventType {
+  enrollment_token_created
+  device_registered
+  device_updated
+  device_revoked
+  device_maintenance_on
+  device_maintenance_off
+  reservation_created
+  reservation_canceled
+  reservation_activated
+  reservation_expired
+  reservation_no_show
+  reservation_completed
+  reservation_overridden
+  connect_requested
+  connect_granted
+  connect_denied
+  session_ended
+  admin_override
+  user_created
+  user_updated
+}
+
+// ─── Users & Teams ───────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  role          Role     @default(user)
+  passwordHash  String?
+  sshPublicKey  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ownedDevices      Device[]          @relation("DeviceOwner")
+  reservations      Reservation[]     @relation("UserReservations")
+  overriddenReservations Reservation[] @relation("OverrideBy")
+  sessions          Session[]
+  auditEvents       AuditEvent[]
+  enrollmentTokens  EnrollmentToken[]
+  teamMemberships   TeamMember[]
+
+  @@map("users")
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  devices     Device[]
+  members     TeamMember[]
+  reservations Reservation[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String @id @default(uuid())
+  userId String
+  teamId String
+  role   Role   @default(user)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@map("team_members")
+}
+
+// ─── Devices ─────────────────────────────────────────────
+
+model Device {
+  id                String       @id @default(uuid())
+  hostname          String
+  displayName       String?
+  osType            OsType
+  architecture      String?
+  ipAddress         String?
+  status            DeviceStatus @default(enrolled)
+  maintenanceMode   Boolean      @default(false)
+  tags              String[]     @default([])
+  notes             String?
+  ownerUserId       String?
+  teamId            String?
+  lastHeartbeatAt   DateTime?
+  lastSeenUser      String?
+  idleSeconds       Int?
+  cpuPercent        Float?
+  memPercent        Float?
+  gpuPercent        Float?
+  gpuMemPercent     Float?
+  sshUsername        String?
+  sshPasswordEnc    String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  owner         User?          @relation("DeviceOwner", fields: [ownerUserId], references: [id])
+  team          Team?          @relation(fields: [teamId], references: [id])
+  accessMethods DeviceAccessMethod[]
+  capabilities  DeviceCapability[]
+  heartbeats    DeviceHeartbeat[]
+  reservations  Reservation[]
+  sessions      Session[]
+  maintenanceWindows MaintenanceWindow[]
+
+  @@map("devices")
+}
+
+model DeviceAccessMethod {
+  id       String       @id @default(uuid())
+  deviceId String
+  method   AccessMethod
+  port     Int?
+  metadata Json?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, method])
+  @@map("device_access_methods")
+}
+
+model DeviceCapability {
+  id       String @id @default(uuid())
+  deviceId String
+  name     String
+  value    String?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, name])
+  @@map("device_capabilities")
+}
+
+model DeviceHeartbeat {
+  id            String   @id @default(uuid())
+  deviceId      String
+  reportedAt    DateTime @default(now())
+  hostname      String?
+  osInfo        String?
+  localUser     String?
+  idleSeconds   Int?
+  sessionActive Boolean  @default(false)
+  metadata      Json?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, reportedAt])
+  @@map("device_heartbeats")
+}
+
+// ─── Enrollment ──────────────────────────────────────────
+
+model EnrollmentToken {
+  id              String    @id @default(uuid())
+  token           String    @unique
+  createdByUserId String
+  expiresAt       DateTime
+  usedAt          DateTime?
+  deviceId        String?
+  metadata        Json?
+  createdAt       DateTime  @default(now())
+
+  createdBy User @relation(fields: [createdByUserId], references: [id])
+
+  @@index([token])
+  @@map("enrollment_tokens")
+}
+
+// ─── Reservations ────────────────────────────────────────
+
+model Reservation {
+  id                  String            @id @default(uuid())
+  deviceId            String
+  userId              String
+  teamId              String?
+  startAt             DateTime
+  endAt               DateTime
+  checkInDeadlineAt   DateTime?
+  status              ReservationStatus @default(pending)
+  reason              String?
+  overrideByUserId    String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  device    Device   @relation(fields: [deviceId], references: [id])
+  user      User     @relation("UserReservations", fields: [userId], references: [id])
+  overrideBy User?   @relation("OverrideBy", fields: [overrideByUserId], references: [id])
+  team      Team?    @relation(fields: [teamId], references: [id])
+  sessions  Session[]
+
+  @@index([deviceId, startAt, endAt])
+  @@index([userId])
+  @@index([status])
+  @@map("reservations")
+}
+
+// ─── Sessions ────────────────────────────────────────────
+
+model Session {
+  id                String          @id @default(uuid())
+  deviceId          String
+  reservationId     String?
+  userId            String
+  protocol          SessionProtocol
+  startedAt         DateTime        @default(now())
+  endedAt           DateTime?
+  brokerSessionId   String?
+  terminationReason String?
+  createdAt         DateTime        @default(now())
+
+  device      Device       @relation(fields: [deviceId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+
+  @@index([deviceId])
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ─── Audit ───────────────────────────────────────────────
+
+model AuditEvent {
+  id            String         @id @default(uuid())
+  eventType     AuditEventType
+  userId        String?
+  deviceId      String?
+  reservationId String?
+  sessionId     String?
+  details       Json?
+  createdAt     DateTime       @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([eventType])
+  @@index([deviceId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+// ─── Maintenance ─────────────────────────────────────────
+
+model MaintenanceWindow {
+  id        String   @id @default(uuid())
+  deviceId  String
+  reason    String?
+  startAt   DateTime
+  endAt     DateTime?
+  createdAt DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@map("maintenance_windows")
+}

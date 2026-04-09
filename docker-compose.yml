@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: devicepool
+      POSTGRES_PASSWORD: devicepool
+      POSTGRES_DB: devicepool
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devicepool"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://devicepool:devicepool@postgres:5432/devicepool?schema=public
+      NEXTAUTH_SECRET: change-me-generate-with-openssl-rand-base64-32
+      NEXTAUTH_URL: http://localhost:3000
+      GUACAMOLE_URL: http://guacamole:8080/guacamole
+      ENROLLMENT_TOKEN_TTL_MINUTES: "15"
+      HEARTBEAT_STALE_SECONDS: "120"
+      RESERVATION_GRACE_MINUTES: "10"
+      MAX_RESERVATION_HOURS: "168"
+      CREDENTIAL_KEY: "2808d1e5d80423856a3663730221e373b00b5f2ae2163fb13cfe5ec1bdd18ff1"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

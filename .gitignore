@@ -1,0 +1,9 @@
+node_modules/
+.next/
+src/generated/
+.env
+*.tsbuildinfo
+dist/
+agent/devicepool-agent
+agent/config.json
+.env
