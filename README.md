@@ -1,4 +1,4 @@
-Cadbury will start helping as well from now on - your local ai assistant
+Cadbury is now officially part of the team as your local AI assistant.
 
 ## Quick Start (Docker)
 
