@@ -1,6 +1,4 @@
-# Device Pool
-
-Internal platform for sharing devices (Linux, macOS, Windows) across a team. Users can see device availability, reserve a device, and get SSH credentials to connect — all from a single web page.
+Cadbury will start helping as well from now on - your local ai assistant
 
 ## Quick Start (Docker)
 
