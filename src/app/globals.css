@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f8f9fb;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f3f4f6;
-  --color-border: #e5e7eb;
-  --color-border-light: #f0f1f3;
-  --color-text: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
-  --color-primary: #4f46e5;
-  --color-primary-light: #eef2ff;
-  --color-primary-hover: #4338ca;
-  --color-success: #10b981;
-  --color-success-light: #ecfdf5;
+  --color-bg: #1a1a1a;
+  --color-surface: #242424;
+  --color-surface-hover: #2e2e2e;
+  --color-border: #3a3a3a;
+  --color-border-light: #333333;
+  --color-text: #eeeeee;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #707070;
+  --color-primary: #76b900;
+  --color-primary-light: #1a2e00;
+  --color-primary-hover: #8ed100;
+  --color-success: #76b900;
+  --color-success-light: #1a2e00;
   --color-warning: #f59e0b;
-  --color-warning-light: #fffbeb;
+  --color-warning-light: #332600;
   --color-danger: #ef4444;
-  --color-danger-light: #fef2f2;
+  --color-danger-light: #3b1111;
   --color-info: #3b82f6;
-  --color-info-light: #eff6ff;
+  --color-info-light: #0f1f3d;
   --color-orange: #f97316;
-  --color-orange-light: #fff7ed;
+  --color-orange-light: #331a00;
 }
 
 body {
@@ -36,18 +36,18 @@ body {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* Input focus ring */
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px rgba(118, 185, 0, 0.2);
 }
 
 /* Button base */
@@ -83,11 +83,11 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #059669;
+  background: #8ed100;
 }
 
 .btn-danger {
-  background: white;
+  background: transparent;
   color: var(--color-danger);
   border: 1px solid var(--color-danger);
 }
